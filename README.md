@@ -1,1 +1,1 @@
-dev
+auth-service
