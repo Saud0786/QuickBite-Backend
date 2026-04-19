@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -86,6 +87,15 @@ public class AuthController {
     @Operation(summary = "Update user profile")
     public ResponseEntity<ApiResponse<UserDto>> updateProfile(@AuthenticationPrincipal UserDetails userDetails,
                                                                @Valid @RequestBody ProfileUpdateRequest request) {
+        String userId = authService.getUserByEmail(userDetails.getUsername()).getUserId();
+        UserDto user = authService.updateProfile(userId, request);
+        return ResponseEntity.ok(ApiResponse.success(user, "Profile updated successfully"));
+    }
+
+    @PutMapping(value = "/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Update user profile (multipart)")
+    public ResponseEntity<ApiResponse<UserDto>> updateProfileMultipart(@AuthenticationPrincipal UserDetails userDetails,
+                                                                       @ModelAttribute ProfileUpdateRequest request) {
         String userId = authService.getUserByEmail(userDetails.getUsername()).getUserId();
         UserDto user = authService.updateProfile(userId, request);
         return ResponseEntity.ok(ApiResponse.success(user, "Profile updated successfully"));

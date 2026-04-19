@@ -5,6 +5,7 @@ import com.quickbite.auth.entity.User;
 import com.quickbite.auth.exception.CustomExceptions;
 import com.quickbite.auth.repository.UserRepository;
 import com.quickbite.auth.service.AuthService;
+import com.quickbite.auth.service.ImageUploadService;
 import com.quickbite.auth.service.JwtService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +33,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final RedisTemplate<String, String> redisTemplate;
+    private final ImageUploadService imageUploadService;
     
     private static final String TOKEN_BLACKLIST_PREFIX = "blacklist:token:";
     
@@ -212,6 +214,13 @@ public class AuthServiceImpl implements AuthService {
         
         if (request.getProfilePicUrl() != null) {
             user.setProfilePicUrl(request.getProfilePicUrl());
+        }
+
+        if (request.getProfileImage() != null && !request.getProfileImage().isEmpty()) {
+            String uploadedUrl = imageUploadService.uploadImage(request.getProfileImage());
+            if (uploadedUrl != null) {
+                user.setProfilePicUrl(uploadedUrl);
+            }
         }
         
         User updatedUser = userRepository.save(user);

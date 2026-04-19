@@ -26,12 +26,14 @@ public class RestaurantResponse {
     private Double latitude;
     private Double longitude;
     private String phone;
+    private String imageUrl;
     private Boolean isOpen;
     private Boolean isApproved;
     private Double deliveryRadius;
     private Double minOrderAmount;
     private Integer estimatedDeliveryMin;
     private Double avgRating;
+    private Integer totalRatings;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     /** Distance in km from searched location — populated only for geo-proximity results */

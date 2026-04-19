@@ -8,17 +8,22 @@ import com.quickbite.restaurant.repository.RestaurantRepository;
 import com.quickbite.restaurant.service.RestaurantService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import com.quickbite.restaurant.service.ImageUploadService;
 
 /**
  * RestaurantServiceImpl — full implementation of all restaurant business logic.
  *
  * Key design decisions:
- * - Geo-proximity search via Haversine formula (delegated to repository native query)
- * - Rating computation: rolling average updated on each new rating via updateRating()
+ * - Geo-proximity search via Haversine formula (delegated to repository native
+ * query)
+ * - Rating computation: rolling average updated on each new rating via
+ * updateRating()
  * - Approval workflow: isApproved=false on register, set to true only by admin
  * - Owner check enforced at service layer before any mutating operation
  */
@@ -29,6 +34,7 @@ import java.util.List;
 public class RestaurantServiceImpl implements RestaurantService {
 
     private final RestaurantRepository restaurantRepository;
+    private final ImageUploadService imageUploadService;
 
     // ── Registration ──────────────────────────────────────────────────────────
 
@@ -125,7 +131,8 @@ public class RestaurantServiceImpl implements RestaurantService {
     @Override
     @Transactional(readOnly = true)
     public List<RestaurantResponse> searchRestaurants(String keyword) {
-        if (keyword == null || keyword.isBlank()) return List.of();
+        if (keyword == null || keyword.isBlank())
+            return List.of();
         return restaurantRepository.searchActiveByKeyword(keyword.trim())
                 .stream().map(r -> toResponse(r, null)).toList();
     }
@@ -171,7 +178,6 @@ public class RestaurantServiceImpl implements RestaurantService {
         return toResponse(saved, null);
     }
 
-
     // ── Toggle Open ───────────────────────────────────────────────────────────
 
     @Override
@@ -196,14 +202,15 @@ public class RestaurantServiceImpl implements RestaurantService {
     // ── Rating ────────────────────────────────────────────────────────────────
 
     /**
-     * Rolling average: newAvg = ((oldAvg * totalRatings) + newRating) / (totalRatings + 1)
+     * Rolling average: newAvg = ((oldAvg * totalRatings) + newRating) /
+     * (totalRatings + 1)
      * Then persisted atomically via repository.updateRating().
      */
     @Override
     public RestaurantResponse updateRating(Integer restaurantId, RatingUpdateRequest request) {
         Restaurant r = findOrThrow(restaurantId);
 
-        double newAvg = Math.round(request.getNewRating() * 100.0) / 100.0;   // round to 2 decimal places
+        double newAvg = Math.round(request.getNewRating() * 100.0) / 100.0; // round to 2 decimal places
 
         restaurantRepository.updateRating(restaurantId, newAvg);
         r.setAvgRating(newAvg);
@@ -221,6 +228,11 @@ public class RestaurantServiceImpl implements RestaurantService {
     }
 
     private Restaurant buildFromRequest(RestaurantRequest req, String ownerId) {
+        String uploadedUrl = null;
+        if (req.getImage() != null && !req.getImage().isEmpty()) {
+            uploadedUrl = imageUploadService.uploadImage(req.getImage());
+        }
+
         return Restaurant.builder()
                 .ownerId(ownerId)
                 .name(req.getName())
@@ -231,27 +243,44 @@ public class RestaurantServiceImpl implements RestaurantService {
                 .latitude(req.getLatitude())
                 .longitude(req.getLongitude())
                 .phone(req.getPhone())
+                .imageUrl(uploadedUrl)
                 .deliveryRadius(req.getDeliveryRadius() != null ? req.getDeliveryRadius() : 5.0)
                 .minOrderAmount(req.getMinOrderAmount() != null ? req.getMinOrderAmount() : 0.0)
                 .estimatedDeliveryMin(req.getEstimatedDeliveryMin() != null ? req.getEstimatedDeliveryMin() : 30)
                 .isOpen(false)
                 .isApproved(false)
                 .avgRating(0.0)
+                .totalRatings(0)
                 .build();
     }
 
     private void applyUpdate(Restaurant r, RestaurantRequest req) {
-        if (req.getName()              != null) r.setName(req.getName());
-        if (req.getDescription()       != null) r.setDescription(req.getDescription());
-        if (req.getCuisine()           != null) r.setCuisine(req.getCuisine());
-        if (req.getAddress()           != null) r.setAddress(req.getAddress());
-        if (req.getCity()              != null) r.setCity(req.getCity());
-        if (req.getLatitude()          != null) r.setLatitude(req.getLatitude());
-        if (req.getLongitude()         != null) r.setLongitude(req.getLongitude());
-        if (req.getPhone()             != null) r.setPhone(req.getPhone());
-        if (req.getDeliveryRadius()    != null) r.setDeliveryRadius(req.getDeliveryRadius());
-        if (req.getMinOrderAmount()    != null) r.setMinOrderAmount(req.getMinOrderAmount());
-        if (req.getEstimatedDeliveryMin() != null) r.setEstimatedDeliveryMin(req.getEstimatedDeliveryMin());
+        if (req.getName() != null)
+            r.setName(req.getName());
+        if (req.getDescription() != null)
+            r.setDescription(req.getDescription());
+        if (req.getCuisine() != null)
+            r.setCuisine(req.getCuisine());
+        if (req.getAddress() != null)
+            r.setAddress(req.getAddress());
+        if (req.getCity() != null)
+            r.setCity(req.getCity());
+        if (req.getLatitude() != null)
+            r.setLatitude(req.getLatitude());
+        if (req.getLongitude() != null)
+            r.setLongitude(req.getLongitude());
+        if (req.getPhone() != null)
+            r.setPhone(req.getPhone());
+        if (req.getDeliveryRadius() != null)
+            r.setDeliveryRadius(req.getDeliveryRadius());
+        if (req.getMinOrderAmount() != null)
+            r.setMinOrderAmount(req.getMinOrderAmount());
+        if (req.getEstimatedDeliveryMin() != null)
+            r.setEstimatedDeliveryMin(req.getEstimatedDeliveryMin());
+
+        if (req.getImage() != null && !req.getImage().isEmpty()) {
+            r.setImageUrl(imageUploadService.uploadImage(req.getImage()));
+        }
     }
 
     /**
@@ -264,7 +293,7 @@ public class RestaurantServiceImpl implements RestaurantService {
         double dLon = Math.toRadians(lon2 - lon1);
         double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
                 + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
-                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+                        * Math.sin(dLon / 2) * Math.sin(dLon / 2);
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         double dist = R * c;
         return Math.round(dist * 100.0) / 100.0;
@@ -283,7 +312,9 @@ public class RestaurantServiceImpl implements RestaurantService {
                 .latitude(r.getLatitude())
                 .longitude(r.getLongitude())
                 .phone(r.getPhone())
+                .imageUrl(r.getImageUrl())
                 .avgRating(r.getAvgRating())
+                .totalRatings(r.getTotalRatings())
                 .isOpen(r.getIsOpen())
                 .isApproved(r.getIsApproved())
                 .deliveryRadius(r.getDeliveryRadius())

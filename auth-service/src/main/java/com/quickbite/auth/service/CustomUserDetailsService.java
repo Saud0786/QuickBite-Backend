@@ -21,10 +21,16 @@ public class CustomUserDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         User user = userRepository.findByEmail(email)
             .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+
+        String passwordHash = user.getPasswordHash();
+        if (passwordHash == null || passwordHash.isBlank()) {
+            // OAuth accounts may not have a local password, but Spring Security requires a non-null value.
+            passwordHash = "{noop}oauth-user";
+        }
         
         return org.springframework.security.core.userdetails.User.builder()
             .username(user.getEmail())
-            .password(user.getPasswordHash())
+            .password(passwordHash)
             .authorities(Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())))
             .accountLocked(!user.isActive())
             .disabled(!user.isActive())

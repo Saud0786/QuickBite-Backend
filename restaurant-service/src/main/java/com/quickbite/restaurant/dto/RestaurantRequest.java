@@ -50,5 +50,7 @@ public class RestaurantRequest {
     @Positive
     private Integer estimatedDeliveryMin;
 
+    private org.springframework.web.multipart.MultipartFile image;
+
 }
 

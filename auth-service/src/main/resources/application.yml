@@ -55,6 +55,12 @@ jwt:
   expiration: 86400000
   refresh-expiration: 604800000
 
+# Cloudinary Config
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME}
+  api-key: ${CLOUDINARY_API_KEY}
+  api-secret: ${CLOUDINARY_API_SECRET}
+
 logging:
   level:
     com.quickbite.auth: DEBUG

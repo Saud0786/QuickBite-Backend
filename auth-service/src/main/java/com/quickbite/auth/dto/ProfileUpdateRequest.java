@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
 
 @Data
 public class ProfileUpdateRequest {
@@ -17,6 +18,8 @@ public class ProfileUpdateRequest {
     private String phone;
     
     private String profilePicUrl;
+
+    private MultipartFile profileImage;
 }
 
 // ChangePasswordRequest.java

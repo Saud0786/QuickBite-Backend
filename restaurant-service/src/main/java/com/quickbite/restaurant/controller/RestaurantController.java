@@ -162,12 +162,12 @@ public class RestaurantController {
      * Register a new restaurant. Requires OWNER role.
      * Sets isApproved=false — awaits admin approval before going live.
      */
-    @PostMapping
+    @PostMapping(consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('OWNER')")
     @Operation(summary = "Register a new restaurant",
                security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<ApiResponse<RestaurantResponse>> register(
-            @Valid @RequestBody RestaurantRequest request,
+            @Valid @ModelAttribute RestaurantRequest request,
             Authentication authentication) {
 
         String ownerId = extractUserId(authentication);
@@ -198,13 +198,13 @@ public class RestaurantController {
      * PUT /api/restaurants/{id}
      * Update restaurant profile (owner only, must be their own restaurant).
      */
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('OWNER') or hasRole('ADMIN')")
     @Operation(summary = "Update restaurant profile",
                security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<ApiResponse<RestaurantResponse>> update(
             @PathVariable Integer id,
-            @Valid @RequestBody RestaurantRequest request,
+            @Valid @ModelAttribute RestaurantRequest request,
             Authentication authentication) {
 
         String requesterId = extractUserId(authentication);

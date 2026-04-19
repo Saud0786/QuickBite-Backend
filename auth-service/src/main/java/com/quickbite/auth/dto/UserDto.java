@@ -18,6 +18,7 @@ public class UserDto {
     private String email;
     private String phone;
     private String role;
+    private String provider;
     private String profilePicUrl;
     private boolean isActive;
     private boolean isEmailVerified;
@@ -30,6 +31,7 @@ public class UserDto {
             .email(user.getEmail())
             .phone(user.getPhone())
             .role(user.getRole().name())
+            .provider(user.getProvider() != null ? user.getProvider().name() : null)
             .profilePicUrl(user.getProfilePicUrl())
             .isActive(user.isActive())
             .isEmailVerified(user.isEmailVerified())

@@ -77,6 +77,8 @@ public class Restaurant {
     @Column(name = "phone", length = 15)
     private String phone;
 
+    @Column(name = "image_url", length = 500)
+    private String imageUrl;
 
     /**
      * Aggregated average food rating — updated by Review-Service callback.
@@ -85,6 +87,10 @@ public class Restaurant {
     @Column(name = "avg_rating", nullable = false)
     @Builder.Default
     private Double avgRating = 0.0;
+
+    @Column(name = "total_ratings", nullable = false)
+    @Builder.Default
+    private Integer totalRatings = 0;
 
 
     /**
