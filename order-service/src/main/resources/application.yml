@@ -1,0 +1,62 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: order-service
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/quickbite_order_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: saud@123
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    prefer-ip-address: true
+
+# Feign clients for inter-service calls
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 5000
+        readTimeout: 5000
+
+# Order cancellation: allow cancel only if status is PLACED (within this window in minutes)
+order:
+  cancel-window-minutes: 10
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+logging:
+  level:
+    com.cg.order.orderservice: DEBUG
+    org.hibernate.SQL: DEBUG
+
+jwt:
+  secret: ${JWT_SECRET:feskhfhy229823rnsfh2oi3194ejenmasa}
+
+services:
+  restaurant-service:
+    url: ${RESTAURANT_SERVICE_URL:http://localhost:8082}
+  delivery-service:
+    url: ${DELIVERY_SERVICE_URL:http://localhost:8087}

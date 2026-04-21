@@ -14,7 +14,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * RestaurantController — REST API layer for Restaurant-Service.
@@ -189,8 +191,24 @@ public class RestaurantController {
             Authentication authentication) {
 
         String ownerId = extractUserId(authentication);
+                String principalName = authentication.getName();
+
+                List<RestaurantResponse> primary = restaurantService.getByOwner(ownerId);
+                List<RestaurantResponse> merged;
+
+                // Backward compatibility: older rows may have ownerId stored as email.
+                if (principalName != null && !principalName.isBlank() && !principalName.equals(ownerId)) {
+                        List<RestaurantResponse> fallback = restaurantService.getByOwner(principalName);
+                        Map<Integer, RestaurantResponse> byId = new LinkedHashMap<>();
+                        primary.forEach(r -> byId.put(r.getRestaurantId(), r));
+                        fallback.forEach(r -> byId.putIfAbsent(r.getRestaurantId(), r));
+                        merged = byId.values().stream().toList();
+                } else {
+                        merged = primary;
+                }
+
         return ResponseEntity.ok(
-                ApiResponse.success(restaurantService.getByOwner(ownerId),
+                                ApiResponse.success(merged,
                         "Your restaurants fetched"));
     }
 
